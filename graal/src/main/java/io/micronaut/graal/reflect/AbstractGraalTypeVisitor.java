@@ -20,13 +20,8 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.type.CollectionType;
-import io.micronaut.core.annotation.Experimental;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.HttpMethodMapping;
-import io.micronaut.inject.ast.MethodElement;
-import io.micronaut.inject.visitor.TypeElementVisitor;
 import io.micronaut.inject.visitor.VisitorContext;
 
 import java.io.File;
@@ -37,32 +32,29 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
- * A {@link TypeElementVisitor} that builds the GraalVM reflect.json file from Micronaut controllers at compile time.
+ * Abstract base class for Graal visitors.
  *
  * @author Iván López
  * @since 1.1.0
  */
-@Experimental
-public class GraalTypeVisitor implements TypeElementVisitor<Controller, HttpMethodMapping> {
+abstract class AbstractGraalTypeVisitor {
 
     /**
      * System property that indicates the location of the generated reflection JSON file.
      */
     public static final String REFLECTION_JSON_FILE = "graalvm.reflection.json";
 
+    protected static final Set<String> classes = new ConcurrentSkipListSet<>();
+
     private static final String BASE_REFLECT_FILE_PATH = "src/main/graal/reflect.json";
-    private final Set<String> classes = new ConcurrentSkipListSet<>();
-    static List<Map> json;
 
-    @Override
-    public void visitMethod(MethodElement element, VisitorContext context) {
-        if (element.getReturnType() != null && isValidType(element.getReturnType().getClass())) {
-            classes.add(element.getReturnType().getName());
-        }
-    }
+    static List<Map> json = null;
 
-    @Override
     public void start(VisitorContext visitorContext) {
+        if (json != null) {
+            return;
+        }
+
         File baseReflect = new File(BASE_REFLECT_FILE_PATH);
         if (!baseReflect.exists()) {
             // TODO: Compilation error?
@@ -79,7 +71,6 @@ public class GraalTypeVisitor implements TypeElementVisitor<Controller, HttpMeth
         }
     }
 
-    @Override
     public void finish(VisitorContext visitorContext) {
         String f = System.getProperty(REFLECTION_JSON_FILE);
         File file;
@@ -116,7 +107,7 @@ public class GraalTypeVisitor implements TypeElementVisitor<Controller, HttpMeth
         }
     }
 
-    private boolean isValidType(Class<?> type) {
+    protected boolean isValidType(Class<?> type) {
         return type != null && !type.isPrimitive() && type != void.class;
     }
 }

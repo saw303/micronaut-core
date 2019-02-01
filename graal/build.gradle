@@ -1,6 +1,7 @@
 dependencies {
     compileOnly project(":http-client")
     compileOnly project(":inject-java")
+    compile project(":function")
     compile project(":runtime")
 
     testCompile project(":runtime")

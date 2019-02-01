@@ -18,9 +18,9 @@ package io.micronaut.graal.reflect
 
 import io.micronaut.annotation.processing.test.AbstractTypeElementSpec
 
-class GraalTypeVisitorSpec extends AbstractTypeElementSpec {
+class GraalControllerTypeVisitorSpec extends AbstractTypeElementSpec {
 
-    void 'foo'() {
+    void 'test the controller methods return types are added to reflect json'() {
         given:
         buildBeanDefinition('test.MyBean', '''
 package test;
@@ -92,7 +92,7 @@ class MyBean {}
 ''')
 
         when:
-        List<Map> reflectJson = GraalTypeVisitor.json
+        List<Map> reflectJson = GraalControllerTypeVisitor.json
 
         then:
         reflectJson != null

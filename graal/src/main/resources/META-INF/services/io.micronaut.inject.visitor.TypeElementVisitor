@@ -1,1 +1,2 @@
-io.micronaut.graal.reflect.GraalTypeVisitor
+io.micronaut.graal.reflect.GraalControllerTypeVisitor
+io.micronaut.graal.reflect.GraalFunctionBeanTypeVisitor

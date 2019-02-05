@@ -24,7 +24,7 @@ import io.micronaut.inject.visitor.TypeElementVisitor;
 import io.micronaut.inject.visitor.VisitorContext;
 
 /**
- * A {@link TypeElementVisitor} that visits all the methods in {@link Controller}
+ * A {@link TypeElementVisitor} that visits all the methods in {@link Controller}.
  *
  * @author Iván López
  * @since 1.1.0

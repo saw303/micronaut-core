@@ -20,15 +20,14 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import io.micronaut.core.annotation.Internal;
 import io.micronaut.core.util.CollectionUtils;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.inject.visitor.VisitorContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 /**
@@ -44,11 +43,12 @@ abstract class AbstractGraalTypeVisitor {
      */
     public static final String REFLECTION_JSON_FILE = "graalvm.reflection.json";
 
-    protected static final Set<String> classes = new ConcurrentSkipListSet<>();
-
+    static final String ATTR_TEST_MODE = "io.micronaut.GRAAL_TEST";
+    private static Map<Class, List<Map>> testReferences = null;
     private static final String BASE_REFLECT_FILE_PATH = "src/main/graal/reflect.json";
 
-    static List<Map> json = null;
+    protected final Set<String> classes = new ConcurrentSkipListSet<>();
+    private List<Map> json = null;
 
     public void start(VisitorContext visitorContext) {
         if (json != null) {
@@ -57,21 +57,33 @@ abstract class AbstractGraalTypeVisitor {
 
         File baseReflect = new File(BASE_REFLECT_FILE_PATH);
         if (!baseReflect.exists()) {
-            // TODO: Compilation error?
-            throw new RuntimeException("File " + BASE_REFLECT_FILE_PATH + " doesn't exist");
+            json = new ArrayList<>();
+        } else {
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                CollectionType collectionType = mapper.getTypeFactory().constructCollectionType(List.class, Map.class);
+                json = mapper.readValue(baseReflect, collectionType);
+            } catch (IOException e) {
+                json = new ArrayList<>();
+            }
         }
 
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            CollectionType collectionType = mapper.getTypeFactory().constructCollectionType(List.class, Map.class);
-            json = mapper.readValue(baseReflect, collectionType);
-        } catch (IOException e) {
-            // TODO: Compilation error??
-            throw new RuntimeException("File " + BASE_REFLECT_FILE_PATH + " is not a valid json file");
-        }
     }
 
     public void finish(VisitorContext visitorContext) {
+        for (String className : classes) {
+            json.add(CollectionUtils
+                    .mapOf("name", className, "allPublicMethods", true, "allDeclaredConstructors", true));
+        }
+
+        if (Boolean.getBoolean(ATTR_TEST_MODE)) {
+            if (testReferences == null) {
+                testReferences = new HashMap<>();
+            }
+            testReferences.put(getClass(), json);
+            return;
+        }
+
         String f = System.getProperty(REFLECTION_JSON_FILE);
         File file;
         if (StringUtils.isNotEmpty(f)) {
@@ -83,18 +95,16 @@ abstract class AbstractGraalTypeVisitor {
             }
 
             if (!parent.exists() || !parent.isDirectory()) {
-                // TODO: Compilation error?
-                throw new RuntimeException("Neither 'build' nor 'target' directories exist. Graal reflection file can't be generated");
+                visitorContext.warn("Neither 'build' nor 'target' directories exist. Graal reflection file can't be generated", null);
+                file = null;
             } else {
                 file = new File(parent, "reflect.json");
             }
         }
 
-        if (!file.exists()) {
-            for (String className : classes) {
-                json.add(CollectionUtils
-                        .mapOf("name", className, "allPublicMethods", true, "allDeclaredConstructors", true));
-            }
+
+
+        if (file != null && !file.exists()) {
 
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
@@ -108,6 +118,11 @@ abstract class AbstractGraalTypeVisitor {
     }
 
     protected boolean isValidType(Class<?> type) {
-        return type != null && !type.isPrimitive() && type != void.class;
+        return type != null && !type.isPrimitive() && type != void.class && !type.isAssignableFrom(Iterable.class);
+    }
+
+    @Internal
+    static List<Map> getOutput(Class<?> type) {
+        return testReferences.get(type);
     }
 }

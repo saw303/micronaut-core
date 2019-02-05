@@ -20,6 +20,14 @@ import io.micronaut.annotation.processing.test.AbstractTypeElementSpec
 
 class GraalControllerTypeVisitorSpec extends AbstractTypeElementSpec {
 
+    def setup() {
+        System.setProperty(AbstractGraalTypeVisitor.ATTR_TEST_MODE, "true")
+    }
+
+    def cleanup() {
+        System.setProperty(AbstractGraalTypeVisitor.ATTR_TEST_MODE, "")
+    }
+
     void 'test the controller methods return types are added to reflect json'() {
         given:
         buildBeanDefinition('test.MyBean', '''
@@ -92,7 +100,7 @@ class MyBean {}
 ''')
 
         when:
-        List<Map> reflectJson = GraalControllerTypeVisitor.json
+        List<Map> reflectJson = AbstractGraalTypeVisitor.getOutput(GraalControllerTypeVisitor)
 
         then:
         reflectJson != null

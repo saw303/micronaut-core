@@ -50,6 +50,11 @@ abstract class AbstractGraalTypeVisitor {
 
     private List<Map> json = null;
 
+    /**
+     * Called when visitor processing starts.
+     *
+     * @param visitorContext The visitor context
+     */
     public void start(VisitorContext visitorContext) {
         if (json != null) {
             return;
@@ -70,6 +75,11 @@ abstract class AbstractGraalTypeVisitor {
 
     }
 
+    /**
+     * Called when visitor processing ends.
+     *
+     * @param visitorContext The visitor context
+     */
     public void finish(VisitorContext visitorContext) {
         for (String className : this.getClassesFromContext(visitorContext)) {
             json.add(CollectionUtils
@@ -114,21 +124,45 @@ abstract class AbstractGraalTypeVisitor {
         }
     }
 
+    /**
+     * Whether a class is valid to be included in the reflect.json file.
+     *
+     * @param type The class to check
+     * @return true if the class can be included, false otherwise
+     */
     protected boolean isValidType(Class<?> type) {
         return type != null && !type.isPrimitive() && type != void.class && !type.isAssignableFrom(Iterable.class);
     }
 
+    /**
+     * Get the classes from the visitor context.
+     *
+     * @param visitorContext The visitor context
+     * @return The classes as a Set
+     */
     @SuppressWarnings("unchecked")
-    protected Set<String> getClassesFromContext(VisitorContext visitorContext) {
+    Set<String> getClassesFromContext(VisitorContext visitorContext) {
         return visitorContext
                 .get(CLASSES_CONTEXT_KEY, ConcurrentSkipListSet.class)
                 .orElse(new ConcurrentSkipListSet<String>());
     }
 
-    protected void putClassesToContext(VisitorContext visitorContext, Set<String> classes) {
+    /**
+     * Store the classes in the visitor context.
+     *
+     * @param visitorContext The visitor context
+     * @param classes The classes to store
+     */
+    void putClassesToContext(VisitorContext visitorContext, Set<String> classes) {
         visitorContext.put(CLASSES_CONTEXT_KEY, classes);
     }
 
+    /**
+     * Used for tests to store the json to be generated as a List<Map>.
+     *
+     * @param type The class
+     * @return The internal List for the json to be generated
+     */
     @Internal
     static List<Map> getOutput(Class<?> type) {
         return testReferences.get(type);

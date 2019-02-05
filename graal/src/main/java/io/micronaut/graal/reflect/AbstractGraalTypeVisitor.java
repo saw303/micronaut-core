@@ -46,8 +46,8 @@ abstract class AbstractGraalTypeVisitor {
     static final String ATTR_TEST_MODE = "io.micronaut.GRAAL_TEST";
     private static Map<Class, List<Map>> testReferences = null;
     private static final String BASE_REFLECT_FILE_PATH = "src/main/graal/reflect.json";
+    private static final String CLASSES_CONTEXT_KEY = "CLASSES_CONTEXT";
 
-    protected final Set<String> classes = new ConcurrentSkipListSet<>();
     private List<Map> json = null;
 
     public void start(VisitorContext visitorContext) {
@@ -71,7 +71,7 @@ abstract class AbstractGraalTypeVisitor {
     }
 
     public void finish(VisitorContext visitorContext) {
-        for (String className : classes) {
+        for (String className : this.getClassesFromContext(visitorContext)) {
             json.add(CollectionUtils
                     .mapOf("name", className, "allPublicMethods", true, "allDeclaredConstructors", true));
         }
@@ -102,10 +102,7 @@ abstract class AbstractGraalTypeVisitor {
             }
         }
 
-
-
         if (file != null && !file.exists()) {
-
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter writer = mapper.writer(new DefaultPrettyPrinter());
             try {
@@ -119,6 +116,17 @@ abstract class AbstractGraalTypeVisitor {
 
     protected boolean isValidType(Class<?> type) {
         return type != null && !type.isPrimitive() && type != void.class && !type.isAssignableFrom(Iterable.class);
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Set<String> getClassesFromContext(VisitorContext visitorContext) {
+        return visitorContext
+                .get(CLASSES_CONTEXT_KEY, ConcurrentSkipListSet.class)
+                .orElse(new ConcurrentSkipListSet<String>());
+    }
+
+    protected void putClassesToContext(VisitorContext visitorContext, Set<String> classes) {
+        visitorContext.put(CLASSES_CONTEXT_KEY, classes);
     }
 
     @Internal

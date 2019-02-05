@@ -23,6 +23,8 @@ import io.micronaut.inject.ast.MethodElement;
 import io.micronaut.inject.visitor.TypeElementVisitor;
 import io.micronaut.inject.visitor.VisitorContext;
 
+import java.util.Set;
+
 /**
  * A {@link TypeElementVisitor} that visits all the methods in {@link Controller}.
  *
@@ -34,8 +36,12 @@ public class GraalControllerTypeVisitor extends AbstractGraalTypeVisitor impleme
 
     @Override
     public void visitMethod(MethodElement element, VisitorContext context) {
+        Set<String> classes = getClassesFromContext(context);
+
         if (element.getReturnType() != null && isValidType(element.getReturnType().getClass())) {
             classes.add(element.getReturnType().getName());
         }
+
+        putClassesToContext(context, classes);
     }
 }

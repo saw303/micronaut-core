@@ -18,7 +18,7 @@ package io.micronaut.graal.reflect
 
 import io.micronaut.annotation.processing.test.AbstractTypeElementSpec
 
-class GraalControllerTypeVisitorSpec extends AbstractTypeElementSpec {
+class GraalFunctionBeanTypeVisitorSpec extends AbstractTypeElementSpec {
 
     def setup() {
         System.setProperty(AbstractGraalTypeVisitor.ATTR_TEST_MODE, "true")
@@ -28,50 +28,21 @@ class GraalControllerTypeVisitorSpec extends AbstractTypeElementSpec {
         System.setProperty(AbstractGraalTypeVisitor.ATTR_TEST_MODE, "")
     }
 
-    void 'test the controller methods return types are added to reflect json'() {
+    void 'test the return types for @FunctionBeans are added to reflect.json'() {
         given:
         buildBeanDefinition('test.MyBean', '''
 package test;
 
-import io.micronaut.http.MediaType;
-import io.micronaut.http.annotation.Controller;
-import io.micronaut.http.annotation.Get;
-import io.micronaut.http.annotation.Produces;
-import io.reactivex.Single;
+import io.micronaut.function.FunctionBean;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.function.Function;
 
-@Controller("/")
-class HelloController {
+@FunctionBean("greeting")
+class GreetingFunction implements Function<String, Message> {
 
-    @Get("/hello/{name}")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String sayHi(String name) {
-        return "Hello " + name;
-    }
-
-    @Get("/hello/msg")
-    public Message msg() {
-        return new Message("Hello world!");
-    }
-
-    @Get("/hello/list")
-    public List<String> list() {
-        return Arrays.asList("Hello", "World");
-    }
-
-    @Get("/hello/list-pojo")
-    public List<Message> listPojo() {
-        return Arrays.asList(
-                new Message("Hello"),
-                new Message("World")
-        );
-    }
-
-    @Get("/hello/msg-single")
-    public Single<Message> msgSingle() {
-        return Single.just(new Message("Hello world!"));
+    @Override
+    public Message apply(String name) {
+        return new Message("Hello " + name);
     }
 }
 
@@ -100,12 +71,11 @@ class MyBean {}
 ''')
 
         when:
-        List<Map> reflectJson = AbstractGraalTypeVisitor.getOutput(GraalFunctionBeanTypeVisitor)
+        List<Map> reflectJson = AbstractGraalTypeVisitor.getOutput(GraalControllerTypeVisitor)
 
         then:
         reflectJson != null
         reflectJson.name.any { it == 'test.Message'}
-        reflectJson.name.any { it == 'java.util.List'}
         reflectJson.find { it.name == 'test.Message'}.allDeclaredConstructors == true
         reflectJson.find { it.name == 'test.Message'}.allPublicMethods == true
     }

@@ -12,6 +12,7 @@ import io.micronaut.security.rules.SecurityRule;
 import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 
+import javax.annotation.Nullable;
 import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,17 @@ class GatewayController {
 
     GatewayController(MockHttpClient mockHttpClient) {
         this.mockHttpClient = mockHttpClient;
+    }
+
+    @Secured(SecurityRule.IS_ANONYMOUS)
+    @Get("/anonymous")
+    public Single<Map<String, String>> anonymous(@Nullable Principal principal) {
+        return mockHttpClient.userName().map(remoteUser -> {
+            Map<String, String> result = new HashMap<>();
+            result.put("local", principal != null ? principal.getName() : "Anonymous");
+            result.put("remote", remoteUser);
+            return result;
+        });
     }
 
     @Secured(SecurityRule.IS_AUTHENTICATED)

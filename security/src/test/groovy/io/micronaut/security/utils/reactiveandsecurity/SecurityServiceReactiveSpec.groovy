@@ -67,6 +67,14 @@ class SecurityServiceReactiveSpec extends Specification {
         response.status == HttpStatus.OK
         response.body() == [local: 'john', remote: 'john']
 
+        when: 'if we do a request to the gateway server without authenticating'
+        request = HttpRequest.GET("/anonymous")
+        response = httpClient.toBlocking().exchange(request, Map)
+
+        then: 'user is not authenticated in the gateway or in the mock httpserver'
+        response.status == HttpStatus.OK
+        response.body() == [local: 'Anonymous', remote: 'Anonymous']
+
         when: 'if we do a request to the gateway server and rely on propagation filter'
         request = HttpRequest.GET("/").header(HttpHeaders.AUTHORIZATION, 'XXXX')
         response = httpClient.toBlocking().exchange(request, Map)

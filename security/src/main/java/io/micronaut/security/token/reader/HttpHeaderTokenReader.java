@@ -20,6 +20,8 @@ import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 /**
@@ -36,6 +38,7 @@ public abstract class HttpHeaderTokenReader implements TokenReader {
      *
      * @return a Prefix before the token in the header value. E.g. Basic
      */
+    @Nullable
     protected abstract String getPrefix();
 
     /**

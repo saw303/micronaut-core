@@ -566,7 +566,7 @@ public class AnnotationValue<A extends Annotation> implements AnnotationValueRes
     @Override
     public final boolean isPresent(CharSequence member) {
         if (StringUtils.isNotEmpty(member)) {
-            return values.containsKey(member);
+            return values.containsKey(member) || defaultValues.containsKey(member);
         }
         return false;
     }
@@ -1009,6 +1009,11 @@ public class AnnotationValue<A extends Annotation> implements AnnotationValueRes
 
     private @Nullable Object getRawSingleValue(@Nonnull String member, Function<Object, Object> valueMapper) {
         Object rawValue = values.get(member);
+
+        if (rawValue == null) {
+            rawValue = defaultValues.get(member);
+        }
+
         if (rawValue != null) {
             if (rawValue.getClass().isArray()) {
                 int len = Array.getLength(rawValue);

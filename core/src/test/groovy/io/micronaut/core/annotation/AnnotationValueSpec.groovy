@@ -1,6 +1,7 @@
 package io.micronaut.core.annotation
 
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class AnnotationValueSpec extends Specification {
 
@@ -144,5 +145,37 @@ class AnnotationValueSpec extends Specification {
         av.isFalse("four")
         av.isFalse("five")
         av.isFalse("six")
+    }
+
+    @Unroll
+    void "Annotation value should respect default values"() {
+
+        given:
+        String annotationMemberName = 'enabled'
+
+        and:
+        AnnotationValue value = new AnnotationValue("SomeAnnotation", values, defaultValues)
+
+        expect:
+        value.isPresent(annotationMemberName) == present
+
+        and:
+        value.isFalse(annotationMemberName) == isFalse
+
+        and:
+        value.isTrue(annotationMemberName) == isTrue
+
+        and:
+        if (present) {
+            value.asBoolean() == expectedValue
+        }
+
+        where:
+        values             | defaultValues      || present | isFalse | isTrue | expectedValue
+        [:]                | [:]                || false   | true    | false  | null
+        [:]                | ['enabled': false] || true    | true    | false  | false
+        ['enabled': true]  | ['enabled': false] || true    | false   | true   | true
+        [:]                | ['enabled': true]  || true    | false   | true   | true
+        ['enabled': false] | ['enabled': false] || true    | true    | false  | false
     }
 }
